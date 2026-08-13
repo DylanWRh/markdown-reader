@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>{{ project_name }} · Markdown Reader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="{{ url_for('static', filename='vendor/mermaid.min.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='vendor/mathjax/tex-svg.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+  </head>
+  <body data-project-name="{{ project_name }}" data-initial-file="{{ initial_file }}">
+    <div class="reading-progress" id="readingProgress"></div>
+    <header class="topbar">
+      <div class="topbar-leading">
+        <button class="icon-button mobile-only" id="openLeft" type="button" aria-label="打开项目目录">
+          <span class="hamburger-icon" aria-hidden="true"></span>
+        </button>
+        <a class="brand" href="/" aria-label="Markdown Reader 首页">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="brand-name">Markdown Reader</span>
+        </a>
+        <span class="top-divider"></span>
+        <nav class="breadcrumbs" id="breadcrumbs" aria-label="当前位置"></nav>
+      </div>
+      <div class="topbar-actions">
+        <span class="reading-meta" id="readingMeta"></span>
+        <button class="icon-button" id="refreshDocument" type="button" aria-label="重新载入文档" title="重新载入">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"/></svg>
+        </button>
+        <button class="icon-button" id="toggleRight" type="button" aria-label="切换文章目录" title="文章目录">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="app-shell" id="appShell">
+      <aside class="project-sidebar" id="projectSidebar" aria-label="项目目录">
+        <div class="sidebar-header">
+          <div>
+            <span class="eyebrow">PROJECT</span>
+            <h2>{{ project_name }}</h2>
+          </div>
+          <button class="icon-button sidebar-close mobile-only" id="closeLeft" type="button" aria-label="关闭项目目录">×</button>
+        </div>
+        <label class="search-box">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input id="fileSearch" type="search" placeholder="搜索文件" autocomplete="off">
+          <kbd>/</kbd>
+        </label>
+        <nav class="file-tree" id="fileTree" aria-label="项目文件"></nav>
+        <footer class="sidebar-footer">
+          <span class="status-dot"></span>
+          <span>Local only</span>
+          <span class="footer-separator">·</span>
+          <span id="fileCount"></span>
+        </footer>
+      </aside>
+
+      <main class="reader" id="reader" tabindex="-1">
+        <div class="document-status" id="documentStatus" role="status">
+          <span class="loading-spinner"></span><span>正在打开文档…</span>
+        </div>
+        <article class="markdown-body" id="documentContent"></article>
+        <footer class="document-footer" id="documentFooter" hidden>
+          <span>End of document</span>
+        </footer>
+      </main>
+
+      <aside class="toc-sidebar" id="tocSidebar" aria-label="文章目录">
+        <div class="toc-heading">本页目录</div>
+        <nav class="table-of-contents" id="tableOfContents"></nav>
+        <div class="toc-bottom">
+          <button class="back-to-top" id="backToTop" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+            回到顶部
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="mobile-scrim" id="mobileScrim"></div>
+    <div class="link-preview" id="linkPreview" role="dialog" aria-live="polite" hidden>
+      <div class="preview-topline">
+        <span class="preview-type">文档预览</span>
+        <span class="preview-path" id="previewPath"></span>
+      </div>
+      <div class="preview-content" id="previewContent"></div>
+      <div class="preview-footer">点击前往 · Esc 关闭</div>
+    </div>
+    <div class="lightbox" id="lightbox" hidden>
+      <button class="lightbox-close" type="button" aria-label="关闭图片预览">×</button>
+      <img alt="">
+    </div>
+    <div class="toast" id="toast" role="status" hidden></div>
+  </body>
+</html>

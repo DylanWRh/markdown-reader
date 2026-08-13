@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-markdown-reader"
+version = "0.2.0"
+description = "A local-first, read-only Markdown project reader"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "Flask>=3.1,<4",
+  "markdown-it-py>=4.0,<5",
+  "mdit-py-plugins>=0.6,<1",
+  "Pygments>=2.20,<3",
+]
+
+[project.scripts]
+readmd = "markdown_reader.app:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["markdown_reader*"]
+
+[tool.setuptools.package-data]
+markdown_reader = [
+  "templates/*.html",
+  "static/*.js",
+  "static/*.css",
+  "static/vendor/*.js",
+  "static/vendor/mathjax/*.js",
+]
+
