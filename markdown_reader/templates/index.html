@@ -10,7 +10,7 @@
     <script defer src="{{ url_for('static', filename='vendor/mathjax/tex-svg.js') }}"></script>
     <script defer src="{{ url_for('static', filename='app.js') }}"></script>
   </head>
-  <body data-project-name="{{ project_name }}" data-initial-file="{{ initial_file }}">
+  <body data-project-name="{{ project_name }}" data-initial-file="{{ initial_file }}" data-workspace-token="{{ workspace_switch_token }}">
     <div class="reading-progress" id="readingProgress"></div>
     <header class="topbar">
       <div class="topbar-leading">
@@ -26,6 +26,15 @@
       </div>
       <div class="topbar-actions">
         <span class="reading-meta" id="readingMeta"></span>
+        <div class="mode-switch" id="modeSwitch" role="group" aria-label="文档模式">
+          <button class="mode-button active" id="readMode" type="button" aria-pressed="true">阅读</button>
+          <button class="mode-button" id="editMode" type="button" aria-pressed="false" disabled>编辑</button>
+        </div>
+        <button class="secondary-button editor-action" id="cancelEdit" type="button" hidden>取消</button>
+        <button class="primary-button editor-action" id="saveDocument" type="button" hidden>保存</button>
+        <button class="icon-button" id="toggleAllSections" type="button" aria-label="折叠全部章节" title="折叠全部章节" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9 4-4 4 4M8 15l4 4 4-4M5 12h14"/></svg>
+        </button>
         <button class="icon-button" id="refreshDocument" type="button" aria-label="重新载入文档" title="重新载入">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"/></svg>
         </button>
@@ -38,10 +47,13 @@
     <div class="app-shell" id="appShell">
       <aside class="project-sidebar" id="projectSidebar" aria-label="项目目录">
         <div class="sidebar-header">
-          <div>
-            <span class="eyebrow">PROJECT</span>
-            <h2>{{ project_name }}</h2>
-          </div>
+          <button class="workspace-trigger" id="openWorkspaceSwitcher" type="button" aria-haspopup="dialog" aria-label="切换工作区">
+            <span class="workspace-trigger-copy">
+              <span class="eyebrow">WORKSPACE</span>
+              <strong id="workspaceName">{{ project_name }}</strong>
+            </span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+          </button>
           <button class="icon-button sidebar-close mobile-only" id="closeLeft" type="button" aria-label="关闭项目目录">×</button>
         </div>
         <label class="search-box">
@@ -59,10 +71,31 @@
       </aside>
 
       <main class="reader" id="reader" tabindex="-1">
-        <div class="document-status" id="documentStatus" role="status">
+        <section class="workspace-welcome" id="workspaceWelcome" {% if initial_file %}hidden{% endif %}>
+          <span class="welcome-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="eyebrow">LOCAL MARKDOWN READER</span>
+          <h1>选择一个工作区开始阅读</h1>
+          <p>打开包含 Markdown 文件的本地目录。文档不会上传，也不会离开你的设备。</p>
+          <button class="primary-button welcome-button" id="welcomeChooseWorkspace" type="button">选择工作区</button>
+        </section>
+        <div class="document-status" id="documentStatus" role="status" {% if not initial_file %}hidden{% endif %}>
           <span class="loading-spinner"></span><span>正在打开文档…</span>
         </div>
         <article class="markdown-body" id="documentContent"></article>
+        <section class="editor-shell" id="editorShell" aria-label="Markdown 编辑器" hidden>
+          <header class="editor-header">
+            <div>
+              <span class="editor-label">MARKDOWN SOURCE</span>
+              <strong id="editorPath"></strong>
+            </div>
+            <span class="editor-state" id="editorState">未修改</span>
+          </header>
+          <textarea class="source-editor" id="sourceEditor" aria-label="Markdown 源码" spellcheck="false"></textarea>
+          <footer class="editor-footer">
+            <span>支持 Tab 缩进</span>
+            <span><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>S</kbd> 保存</span>
+          </footer>
+        </section>
         <footer class="document-footer" id="documentFooter" hidden>
           <span>End of document</span>
         </footer>
@@ -81,6 +114,42 @@
     </div>
 
     <div class="mobile-scrim" id="mobileScrim"></div>
+    <div class="modal-backdrop" id="workspaceBackdrop" hidden>
+      <section class="workspace-dialog" role="dialog" aria-modal="true" aria-labelledby="workspaceDialogTitle">
+        <header class="workspace-dialog-header">
+          <div>
+            <span class="eyebrow">LOCAL WORKSPACES</span>
+            <h2 id="workspaceDialogTitle">切换工作区</h2>
+          </div>
+          <button class="icon-button workspace-close" id="closeWorkspaceSwitcher" type="button" aria-label="关闭工作区切换器">×</button>
+        </header>
+        <form class="workspace-form" id="workspaceForm">
+          <label for="workspacePath">本地目录路径</label>
+          <div class="workspace-input-row">
+            <input id="workspacePath" type="text" autocomplete="off" spellcheck="false" placeholder="C:\\Users\\name\\Documents\\notes">
+            <button class="secondary-button" id="browseWorkspace" type="button">浏览…</button>
+            <button class="primary-button" id="switchWorkspace" type="submit">打开</button>
+          </div>
+          <p class="workspace-hint">输入包含 Markdown 文件的目录。内容只在本机读取。</p>
+          <p class="workspace-error" id="workspaceError" role="alert" hidden></p>
+        </form>
+        <section class="directory-browser" id="directoryBrowser" hidden>
+          <div class="directory-toolbar">
+            <button class="icon-button directory-up" id="directoryUp" type="button" aria-label="返回上级目录" title="上级目录">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 15 4-4 4 4M12 11v8M5 5h14"/></svg>
+            </button>
+            <span class="directory-location" id="directoryLocation"></span>
+          </div>
+          <div class="directory-list" id="directoryList"></div>
+          <footer class="directory-footer">
+            <span id="directoryStatus"></span>
+            <button class="primary-button" id="chooseCurrentDirectory" type="button">选择此目录</button>
+          </footer>
+        </section>
+        <div class="recent-heading">最近使用</div>
+        <div class="workspace-list" id="workspaceList"></div>
+      </section>
+    </div>
     <div class="link-preview" id="linkPreview" role="dialog" aria-live="polite" hidden>
       <div class="preview-topline">
         <span class="preview-type">文档预览</span>
